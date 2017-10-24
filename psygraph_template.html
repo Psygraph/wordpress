@@ -1,0 +1,55 @@
+
+<section>
+  <p>This page is automatically generated, and displays content gathered from the Psygraph application.</p>
+  
+  <h3>Administative Settings</h3>
+  <div style="margin-left: 40px;">
+    [pg_page page="admin"]
+  </div>
+  
+  <h3>List</h3>
+  <div style="margin-left: 40px;">
+    [pg_events display="list" max="100"]
+  </div>
+  HTML: [pg_link linktext="Web page" format="html"]
+  
+  <h3>Map</h3>
+  <div style="margin-left: 40px;">
+    [pg_events display="map" max="4"]
+  </div>
+  KML: [pg_link linktext="Map" format="kml"]
+  
+  <h3>2D Graph</h3>
+  <div style="margin-left: 40px;">
+    [pg_events display="graph" max="4" signal="accelerationNorm"]
+  </div>
+  
+  <h3>3D Graph</h3>
+  <div style="margin-left: 40px;">
+    [pg_events display="graph" max="4" signal="acceleration"]
+  </div>
+  
+  <h3>Bar Chart</h3>
+  <div style="margin-left: 40px;">
+    [pg_events display="bar" max="4" signal="accelerationNorm" interval="week"]
+  </div>
+  
+  <h3>File Input/Output (store Psygraph data offline)</h3>
+  CSV output: [pg_link linktext="Comma-separated values" format="csv"]
+  <fieldset><legend>CSV Input:</legend>[pg_page page="input"]</fieldset>
+  
+  <h3>Audio notes</h3>
+  <div style="margin-left: 40px;">
+    [pg_page page="audio"]
+  </div>
+  
+  <h3>Calendar File Output</h3>
+  ICS: [pg_link linktext="Calendar" format="ics"]
+<!--  
+  <h3>RSS Feed</h3>
+  RSS: [pg_link linktext="RSS Feed" format="rss"]
+-->  
+  <h3>Generate Link</h3>
+  [pg_page page="generateLink"]
+  
+</section>
