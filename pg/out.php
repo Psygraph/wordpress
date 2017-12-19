@@ -128,6 +128,9 @@ function out_writeCSV($FORM, $file) {
         if($signal == "acceleration") {
             fputcsv($file, array("time","x","y","z"));
         }
+        else if($signal == "bluetooth") {
+            fputcsv($file, array("time","x"));
+        }
         else if($signal == "orientation") {
             fputcsv($file, array("time","degrees"));
         }
@@ -209,12 +212,16 @@ function out_writeJSON($FORM, $file) {
         }
     }
     else if( ($signal == "acceleration") ||
-             ($signal == "rotation") ||
-             ($signal == "orientation") ||
+             ($signal == "bluetooth")    ||
+             ($signal == "rotation")     ||
+             ($signal == "orientation")  ||
              ($signal == "location") ) {
         $field = $signal;
         if($signal == "acceleration") {
             $output[] = array("time","x","y","z");
+        }
+        else if($signal == "bluetooth") {
+            $output[] = array("time","x");
         }
         else if($signal == "orientation") {
             $output[] = array("time","orientation");
@@ -293,6 +300,21 @@ function out_writeJSON($FORM, $file) {
                     $norm += $data[$j][3] * $data[$j][3];
                     $norm = sqrt($norm);
                     $output[] = array($data[$j][0], $norm);
+                }
+                if(! --$maxSignals)
+                    break;
+            }
+        }
+    }
+    else if($signal == "bluetooth") {
+        $output[] = array("time","bluetooth");
+        for($i=0; $i<$maxE; $i++) {
+            $json = $e[$i][E_DATA];
+            $eventData = json_decode($json, true);
+            if(isset($eventData["bluetooth"])) {
+                $data = $eventData["bluetooth"];
+                for($j=0; $j<count($data); $j++) {
+                    $output[] = $data[$j];
                 }
                 if(! --$maxSignals)
                     break;
@@ -458,6 +480,9 @@ function getHTMLforData($FORM, $eid, $page, $type, $data) {
             }
             if(isset($data['acceleration'])) {
     		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=acceleration\">acceleration</a>";
+            }
+            if(isset($data['bluetooth'])) {
+    		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=bluetooth\">bluetooth</a>";
             }
             if(isset($data['rotation'])) {
     		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=rotation\">rotation</a>";

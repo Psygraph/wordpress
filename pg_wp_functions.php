@@ -106,8 +106,12 @@ function pg_wp_uploadMedia($username, $eid, $filename, $fileSrc, $title, $text, 
     
     $attachment_id = pg_getMediaID($username, $eid);
     $post_id       = pg_getPostID($username, $eid);
+
     // try uploading the media attachment
-    if(!$attachment_id && $filename!="" && pg_settingsValue("upload")) {
+    if(!$attachment_id && $filename!=""  && 
+        pg_settingsValue("upload") &&
+        user_can($user->ID, "upload_files")
+    ) {
         $filetype = wp_check_filetype($filename);
         $type = $filetype['type'];
         //if($type=="audio/mpeg")
@@ -134,10 +138,16 @@ function pg_wp_uploadMedia($username, $eid, $filename, $fileSrc, $title, $text, 
         }
     }
 
-    if(! $post_id && $text != "" && pg_settingsValue("createPosts")) {
+    if(! $post_id && 
+        $text != "" && 
+        pg_settingsValue("createPosts")
+    ) {
         if($attachment_id) {
             $url = wp_get_attachment_url($attachment_id);
             $text = str_replace("PG_MEDIA_URL", $url, $text);
+        }
+        else {
+            $text = str_replace("PG_MEDIA_URL", "(File not found: check permissions)", $text);
         }
         $err = pg_createPost($user->ID, $eid, $attachment_id, $title, $text, $category);
         if($err != "")

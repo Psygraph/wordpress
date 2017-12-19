@@ -52,8 +52,8 @@ else {
     // publicAccess
     $pa = getUserDataValue($FORM['uid'], "publicAccess");
     $checked = $pa ? "checked" : "";
-    $response .= '<p><em>The following field allows links to access data without a time-limited security certificate.</em></p>';
-    $response .= '<label for="publicAccess">Allow public access to generated data:</label>';
+    $response .= '<p><em>By checking the following box, you are allowing URL-access to your data on this server.</em></p>';
+    $response .= '<label for="publicAccess">Allow public access:</label>';
     $response .= '<input name="publicAccess" id="publicAccess"  type="checkbox" '.$checked.' /><br/><br/>';
 
     $response .= '<input type="hidden" name="respond"  value="true"  id="respond"/>';

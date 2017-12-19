@@ -81,7 +81,7 @@ function pg_createTemplate() {
         'ping_status'    => 'closed',
         'post_author'    => $user->ID,
         'post_name'      => "psygraph_template",
-        'post_title'     => "Psygraph data",
+        'post_title'     => "Psygraph Data",
         'post_status'    => 'pending',
         'post_type'      => 'page',
         'post_content'   => $content
@@ -101,7 +101,7 @@ function pg_deleteTemplate() {
         wp_delete_post($page);
 }
 function pg_getTemplate() {
-    $page = get_page_by_title("Psygraph data", OBJECT, 'post');
+    $page = get_page_by_title("Psygraph Data", OBJECT, 'page');
     if($page)
         return $page->ID;
     return 0;
