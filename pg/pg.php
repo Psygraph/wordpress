@@ -187,7 +187,7 @@ function sanitizeFORM($INFORM) {
             $OUTFORM[$name] = $value;
             break;
         default:
-            DBG("FORM param: $name not recognized");
+            //DBG("FORM param: $name not recognized");
             $OUTFORM[$name] = $value;
         }
     }

@@ -34,7 +34,7 @@ function pg_settings_overview() {
     $current_user = wp_get_current_user();
     $username = $current_user->user_login;
     $page_url      = get_site_url() ."/". $page ."/". $username;    
-    $page_url_safe = get_site_url() ."/?pagename=psygraph_template&username=". $username;    
+    $page_url_safe = get_site_url() ."/?pagename=psygraph_template&pg_username=". $username;    
     print '<div>';
     print '<h2>Psygraph</h2>';
     print "<p>The Psygraph plugin integrates with the Psygraph mobile app (an app that tracks your meditation, breathing, and mindfulness) to visualize your data in WordPress.</p>";
@@ -80,7 +80,7 @@ function pg_settings_validate($input) {
 function pg_settings_mainText() {
     $current_user = wp_get_current_user();
     $username = $current_user->user_login;
-    $feed = get_site_url() ."/?feed=rss2&username=". $username;    
+    $feed = get_site_url() ."/?feed=rss2&pg_username=". $username;    
 
     print "<p>The 'Create posts' checkbox creates posts out of notes in the Psygraph app.  The 'Delete posts' checkbox will delete them from wordpress when they are deleted from the app.</p>";
     print "<p>The 'Post status' field allows you to set the initial status of all created posts.</p>";

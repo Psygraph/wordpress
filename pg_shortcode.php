@@ -2,25 +2,27 @@
 
 require_once( "pg_db.php" );
 
-function pg_getPageUsername() {
-    $username = "foobar";
-    if(get_query_var('pg_username')) {
-        $username = get_query_var('pg_username');
-    }
-    else {
-        $post_id = get_the_ID();
-        $author_id = get_post_field( 'post_author', $post_id );
-        $user = get_user_by('id', $author_id);
-        $username = $user->user_login;
-    }
-    return $username;
-}
 function pg_getCurrentUsername() {
     $current_user     = wp_get_current_user();
     $current_username = $current_user->user_login;
     return $current_username;
 }
 
+function pg_getPageUsername() { // return the user's page
+    $username = "foobar";
+    if(get_query_var('pg_username')) {
+        $username = get_query_var('pg_username');
+        if($username == "current")
+            $username = pg_getCurrentUsername();
+    }
+    #else {
+    #    $post_id = get_the_ID();
+    #    $author_id = get_post_field( 'post_author', $post_id );
+    #    $user = get_user_by('id', $author_id);
+    #    $username = $user->user_login;
+    #}
+    return $username;
+}
 function pg_isOwner() {
     return pg_getPageUsername() == pg_getCurrentUsername();
 }
