@@ -476,7 +476,16 @@ function getHTMLforData($FORM, $eid, $page, $type, $data) {
                 $lat  = $data['location'][0][1];
                 $lng  = $data['location'][0][2];
                 $alt  = $data['location'][0][3];
-                $txt .= $targetLink . 'href="http://maps.google.com/maps?q='. $lat .','. $lng .'">location</a>';
+                $txt .= $targetLink . 'href="http://maps.google.com/maps?q='. $lat .','. $lng .'">map</a>';
+                if(count($data['location'])>1) {
+                    if(isset($data['pathLength']) && $data['pathLength'])
+                        $txt .= " ". round($data['pathLength'],2) . " miles <br/>";
+                    //$txt .= $link. $fileURL ."&format=kml&id=". $eid ."\">map</a>";
+                    //$txt .= $link. $fileURL ."&format=csv&id=". $eid ."&signal=location\">location</a>";
+                    $txt .= $targetLink. 'href="' . $fileURL ."&format=kml&id=". $eid ."\">kml</a>";
+                    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=location\">csv</a>";
+                    //$txt .= $targetLink . 'href="http://maps.google.com/maps?q='. $lat .','. $lng .'">map</a>';
+                }
             }
             if(isset($data['acceleration'])) {
     		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=acceleration\">acceleration</a>";
@@ -507,29 +516,6 @@ function getHTMLforData($FORM, $eid, $page, $type, $data) {
             if(isset($data['audio'])) {
                 $thisURL = $mediaURL . "&action=downloadFile&id=" . $eid;
                 $txt .= $targetLink. 'href="' . $thisURL ."\">audio</a>";
-            }
-        }
-        else if($page=="map") {
-            if($type=="interval") {
-                if(isset($data['pathLength']) && $data['pathLength'])
-                    $txt .= round($data['pathLength'],2) . " miles <br/>";
-                //$txt .= $link. $fileURL ."&format=kml&id=". $eid ."\">map</a>";
-                //$txt .= $link. $fileURL ."&format=csv&id=". $eid ."&signal=location\">location</a>";
-    		    $txt .= $targetLink. 'href="' . $fileURL ."&format=kml&id=". $eid ."\">map</a>";
-    		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=location\">location</a>";
-            }
-            else if($type=="marker") {
-                $txt .=  $data['title'] . "<br/>";
-                if(isset($data['text'])) {
-                    $txt .= $link.'href="" onclick="alert(\''. $data['text'] .'\');">text</a>';
-                }
-                if(isset($data['location'])) {
-                    $time = $data['location'][0][0];
-                    $lat  = $data['location'][0][1];
-                    $lng  = $data['location'][0][2];
-                    $alt  = $data['location'][0][3];
-                    $txt .= $targetLink. 'href="http://maps.google.com/maps?q='. $lat .','. $lng .'">location</a>';
-                }
             }
         }
         else if($page == "timer") {
