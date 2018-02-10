@@ -78,11 +78,11 @@ function doAction($action, $FORM) {
         $user["pages"]      = $pg["pages"];
         $cd                 = $pg["categoryData"];
         $pd                 = $pg["pageData"];
-        $ud                 = $pg["userData"];
+        //$ud                 = $pg["userData"];
         $mtime              = $pg['mtime'];
         $dbMtime            = getUserMtime($user["uid"]);
         if($mtime > $dbMtime) {
-            $data = updateUser($user, $cd, $pd, $ud, $mtime);
+            $data = updateUser($user, $cd, $pd, $mtime);
             printArray($data);
         }
         else {

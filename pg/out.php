@@ -128,8 +128,14 @@ function out_writeCSV($FORM, $file) {
         if($signal == "acceleration") {
             fputcsv($file, array("time","x","y","z"));
         }
-        else if($signal == "bluetooth") {
+        else if($signal == "analog1" || $signal == "analog2") {
             fputcsv($file, array("time","x"));
+        }
+        else if($signal == "temperature") {
+            fputcsv($file, array("time","degrees"));
+        }
+        else if($signal == "heartRate") {
+            fputcsv($file, array("time","rate"));
         }
         else if($signal == "orientation") {
             fputcsv($file, array("time","degrees"));
@@ -212,7 +218,10 @@ function out_writeJSON($FORM, $file) {
         }
     }
     else if( ($signal == "acceleration") ||
-             ($signal == "bluetooth")    ||
+             ($signal == "heartRate")    ||
+             ($signal == "analog1")      ||
+             ($signal == "analog2")      ||
+             ($signal == "temperature")  ||
              ($signal == "rotation")     ||
              ($signal == "orientation")  ||
              ($signal == "location") ) {
@@ -220,8 +229,14 @@ function out_writeJSON($FORM, $file) {
         if($signal == "acceleration") {
             $output[] = array("time","x","y","z");
         }
-        else if($signal == "bluetooth") {
-            $output[] = array("time","x");
+        else if($signal == "analog1" || $signal == "analog2") {
+            $output[] = array("time","value");
+        }
+        else if($signal == "heartRate") {
+            $output[] = array("time","rate");
+        }
+        else if($signal == "temperature") {
+            $output[] = array("time","degrees");
         }
         else if($signal == "orientation") {
             $output[] = array("time","orientation");
@@ -306,13 +321,17 @@ function out_writeJSON($FORM, $file) {
             }
         }
     }
-    else if($signal == "bluetooth") {
-        $output[] = array("time","bluetooth");
+    else if($signal == "heartRate" ||
+            $signal == "analog1"   ||
+            $signal == "analog2"   ||
+            $signal == "temperature"   ||
+    ) {
+        $output[] = array("time",$signal);
         for($i=0; $i<$maxE; $i++) {
             $json = $e[$i][E_DATA];
             $eventData = json_decode($json, true);
-            if(isset($eventData["bluetooth"])) {
-                $data = $eventData["bluetooth"];
+            if(isset($eventData[$signal])) {
+                $data = $eventData[$signal];
                 for($j=0; $j<count($data); $j++) {
                     $output[] = $data[$j];
                 }
@@ -478,8 +497,8 @@ function getHTMLforData($FORM, $eid, $page, $type, $data) {
                 $alt  = $data['location'][0][3];
                 $txt .= $targetLink . 'href="http://maps.google.com/maps?q='. $lat .','. $lng .'">map</a>';
                 if(count($data['location'])>1) {
-                    if(isset($data['pathLength']) && $data['pathLength'])
-                        $txt .= " ". round($data['pathLength'],2) . " miles <br/>";
+                    if(isset($data['distance']) && $data['distance'])
+                        $txt .= " ". round($data['distance'],2) . " miles <br/>";
                     //$txt .= $link. $fileURL ."&format=kml&id=". $eid ."\">map</a>";
                     //$txt .= $link. $fileURL ."&format=csv&id=". $eid ."&signal=location\">location</a>";
                     $txt .= $targetLink. 'href="' . $fileURL ."&format=kml&id=". $eid ."\">kml</a>";
@@ -490,8 +509,17 @@ function getHTMLforData($FORM, $eid, $page, $type, $data) {
             if(isset($data['acceleration'])) {
     		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=acceleration\">acceleration</a>";
             }
-            if(isset($data['bluetooth'])) {
-    		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=bluetooth\">bluetooth</a>";
+            if(isset($data['heartRate'])) {
+    		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=heartRate\">Heart Rate</a>";
+            }
+            if(isset($data['analog1'])) {
+    		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=analog1\">analog1</a>";
+            }
+            if(isset($data['analog2'])) {
+    		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=analog2\">analog2</a>";
+            }
+            if(isset($data['temperature'])) {
+    		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=temperature\">temperature</a>";
             }
             if(isset($data['rotation'])) {
     		    $txt .= $targetLink. 'href="' . $fileURL ."&format=csv&id=". $eid ."&signal=rotation\">rotation</a>";

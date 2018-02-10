@@ -658,10 +658,10 @@ function updateUserData($uid, $categoryData, $pageData) {
     }
     setUserMtime($uid, $lastMtime);
 }
-function updateUser($user, $categoryData, $pageData, $userData, $mtime) {
+function updateUser($user, $categoryData, $pageData, $mtime) {
     $i=1;
     $uid = $user['uid'];
-    setUserData($uid, $userData);
+    //setUserData($uid, $userData);
 
     //$mtime = getUserMtime($uid);
     //$mtime = time()*1000;
