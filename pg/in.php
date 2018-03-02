@@ -58,7 +58,7 @@ function in_readJSON($FORM, $file) {
         $lineNo ++;
                 
         // eid, uid, cid, pid, start, duration, type, data
-        $e["eid"]      = 0+$events[i][0];
+        $e["eid"]      = 0+$events[$i][0];
         $e["uid"]      = $FORM['uid'];
         $e["start"]    = $events[$i][1];
         $e["duration"] = $events[$i][2];

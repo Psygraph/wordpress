@@ -26,11 +26,9 @@ const MAX_ACTIVE_PAGES = 100;
 
 const C_TABLE    = 'categories';
 const C_CID      = 0;
-const C_MTIME    = 1;
-const C_UID      = 2;
-const C_NDX      = 3;
-const C_NAME     = 4;
-const C_DATA     = 5;
+const C_UID      = 1;
+const C_NDX      = 2;
+const C_NAME     = 3;
 //const C_ACTIVE   = 6;
 const MAX_ACTIVE_CATEGORIES = 100;
 
@@ -125,7 +123,7 @@ function ensureHTTPS() {
     if ( empty($_SERVER['HTTPS']) ||
          $_SERVER['HTTPS'] == "off" )
     {
-        DBG("Insecure (HTTP) access to " . $ENV['SERVER_NAME']);
+        DBG("Insecure (HTTP) access.");
         //print($CGI_Obj->redirect("$hrefRoot/index.cgi"));
     }
 }
@@ -277,21 +275,7 @@ function handlePublicLogin($FORM) {
 
 function augmentForm($uid, $FORM) {
     $cat = getCategories($uid, false);
-    $FORM["categories"] = array();
-    $categoryData = array();
-    if(count($cat)) {
-        for($i=0; $i<count($cat)-1; $i++) {
-            $category                 = $cat[$i][C_NAME];
-            $FORM["categories"][$i]   = $category;
-            $categoryData[$category]['mtime'] = 0 +$cat[$i][C_MTIME];
-            $categoryData[$category]['data']  = "";
-        }
-        $category                  = $cat[count($cat)-1][C_NAME];
-        $FORM["categories"][$i]    = $category;
-        $categoryData[$category]['mtime'] = 0 +$cat[count($cat)-1][C_MTIME];
-        $categoryData[$category]['data']  = "";
-    }
-    $FORM["categoryData"]      = $categoryData;
+    $FORM["categories"] = $cat;
 
     $pages = getPages($uid, false);
     $FORM["pages"] = array();
@@ -346,7 +330,7 @@ function pgXmlRpcReadE($e) {
 function pgXmlRpcRead($message) {
     //return xmlrpc_decode($message);
     $ans = array();
-    $err;
+    $err = true;
     try {
         $err = libxml_use_internal_errors(true);
         $msg = new SimpleXMLElement($message);
@@ -479,14 +463,15 @@ function WPGetMediaIDs($username, $cert) {
     return $ans;
 }
 function WPUploadMedia($username, $cert, $eid, $filename, $fileSrc, $title, $text, $loc, $category) {
-    //return pg_wp_getMediaURL($id);
-    // convert the title and text 
-    $text .= "<br />\n<hr />\n";
+    $uid = getIDFromUsername($username);
+    if(! getUserDataValue($uid,"createPosts"))
+        return "";
+    // convert the title and text
     if($filename != "") {
-        $text .= "Audio: <a href=\"PG_MEDIA_URL\">PG_MEDIA_URL</a><br />\n";
+        $text .= "<p class='audio'>Audio: <a href=\"PG_MEDIA_URL\">PG_MEDIA_URL</a></p>\n";
     }
     if($loc != "") {
-        $text .= "Location: [" .$loc . "]<br />\n";
+        $text .= "<p class='location'>Location: [" .$loc . "]</p>\n";
     }
     $text  = htmlspecialchars($text);
     $title = htmlspecialchars($title);
@@ -634,8 +619,9 @@ function deleteUser($uid) {
     $stmt = "DELETE FROM ".E_TABLE." WHERE uid=?";
     $ans = setDB($stmt, array($uid, PDO::PARAM_INT));
 }
-function updateUserData($uid, $categoryData, $pageData) {
+function updateUserData($uid, $pageData) {
     $lastMtime = getUserMtime($uid);
+    /*
     foreach ($categoryData as $category => $value) {
         $mtime = $value['mtime'];
         $lastMtime = max($lastMtime, $mtime);
@@ -646,6 +632,7 @@ function updateUserData($uid, $categoryData, $pageData) {
                                     $uid,      PDO::PARAM_INT,
                                     $category, PDO::PARAM_STR));
     }
+    */
     foreach ($pageData as $page => $value) {
         $mtime = $value['mtime'];
         $lastMtime = max($lastMtime, $mtime);
@@ -658,7 +645,7 @@ function updateUserData($uid, $categoryData, $pageData) {
     }
     setUserMtime($uid, $lastMtime);
 }
-function updateUser($user, $categoryData, $pageData, $mtime) {
+function updateUser($user, $pageData, $mtime) {
     $i=1;
     $uid = $user['uid'];
     //setUserData($uid, $userData);
@@ -667,7 +654,7 @@ function updateUser($user, $categoryData, $pageData, $mtime) {
     //$mtime = time()*1000;
     setUserMtime($uid, $mtime);
 
-    $request = array('categoryData', 'pageData');
+    $request = array('pageData');
 
     $allCategories = getCategories($uid, true);
     $cats = $user["categories"];
@@ -678,11 +665,10 @@ function updateUser($user, $categoryData, $pageData, $mtime) {
     foreach ($cats as $category) {
         $cid = getCategoryIDFromName($uid, $category, true);
         if($cid == -1) {
-            $stmt = "INSERT INTO ".C_TABLE." (name,uid,ndx,m_time) VALUES (?,?,?,?); ";
+            $stmt = "INSERT INTO ".C_TABLE." (name,uid,ndx) VALUES (?,?,?); ";
             $ans  = setDB($stmt, array($category, PDO::PARAM_STR,
                                        $uid,      PDO::PARAM_INT,
-                                       $i,        PDO::PARAM_INT,
-                                       $mtime,    PDO::PARAM_INT));
+                                       $i,        PDO::PARAM_INT));
         }
         else {
             for($j=0; $j<count($allCategories); $j++) {
@@ -690,24 +676,10 @@ function updateUser($user, $categoryData, $pageData, $mtime) {
                     array_splice($allCategories, $j, 1);
                 }
             }
-            $stmt = "UPDATE ".C_TABLE." SET ndx=?, m_time=? WHERE cid=?";
+            $stmt = "UPDATE ".C_TABLE." SET ndx=? WHERE cid=?";
             $ans  = setDB($stmt, array($i,     PDO::PARAM_INT,
-                                       $mtime, PDO::PARAM_INT,
                                        $cid,   PDO::PARAM_INT));
         }
-        // See if we need to update the category data
-        $request['categoryData'][$category] = 0;
-        if(isset($categoryData[$category])) {
-            $value = $categoryData[$category];
-            $mtime = $value['mtime'];
-            $data  = $value['data'];
-            $localMtime = getCategoryMtime($uid, $category);
-            if($mtime > $localMtime) {
-                $request['categoryData'][$category] = 1;
-            }
-        }
-        else
-            $request['categoryData'][$category] = 1; // new category.
         $i++;
     }
     for($i=0; $i<count($allCategories); $i++) {
@@ -790,8 +762,10 @@ function getUserData($uid) {
 }
 function setUserData($uid, $data, $local=false) {
     // Since the publicAccess field is set independently, modify data with the current setting.
-    if(! $local)
+    if(! $local) {
         $data['publicAccess'] = getUserDataValue($uid, 'publicAccess');
+        $data['createPosts'] = getUserDataValue($uid, 'createPosts');
+    }
     $stmt  = "UPDATE ".U_TABLE." SET data=? WHERE uid=?";
     $jdata = json_encode($data, true);
     $ans = setDB($stmt, array($jdata, PDO::PARAM_STR, 
@@ -801,36 +775,38 @@ function setUserData($uid, $data, $local=false) {
 function getUserDataValue($uid, $name) {
     $ans = "";
     switch($name) {
-    case "publicAccess": {
-        $data = getUserData($uid);
-        if(array_key_exists($name, $data))
-            $ans = $data[$name];
-        else
-            $ans = false;
-        break;
-    }
-    default: {
-        $username = getUsernameFromID($uid);
-        $cert     = getCert($uid);
-        $ans      = WPValue($username, $cert[0], $name);
-        break;
-    }
+        case "createPosts":
+        case "publicAccess": {
+            $data = getUserData($uid);
+            if (array_key_exists($name, $data))
+                $ans = $data[$name];
+            else
+                $ans = false;
+            break;
+        }
+        default: {
+            $username = getUsernameFromID($uid);
+            $cert = getCert($uid);
+            $ans = WPValue($username, $cert[0], $name);
+            break;
+        }
     }
     return $ans;
 }
 function setUserDataValue($uid, $name, $value) {
     $ans = "";
     switch($name) {
-    case "publicAccess": {
-        $data = getUserData($uid);
-        $data[$name] = $value;
-        setUserData($uid, $data, true);
-        break;
-    }
-    default: {
-        DBG("No such user value: " . $value);
-        break;
-    }
+        case "createPosts":
+        case "publicAccess": {
+            $data = getUserData($uid);
+            $data[$name] = $value;
+            setUserData($uid, $data, true);
+            break;
+        }
+        default: {
+            DBG("No such user value: " . $value);
+            break;
+        }
     }
     return $ans;
 }
@@ -839,14 +815,11 @@ function setUserDataValue($uid, $name, $value) {
 // CATEGORIES
 // =====================================================================
 
-function getCategories($uid, $all=false, $data=false) {
+function getCategories($uid, $all=false) {
     $ndx = "";
     if(! $all)
         $ndx = "AND ndx<" . MAX_ACTIVE_CATEGORIES;
-    $col = "";
-    if($data)
-        $col = ",data";
-    $stmt = "SELECT cid,m_time,uid,ndx,name$col FROM ".C_TABLE." WHERE uid=? $ndx ORDER BY ndx";
+    $stmt = "SELECT cid,uid,ndx,name FROM ".C_TABLE." WHERE uid=? $ndx ORDER BY ndx";
     $ans = getDB($stmt, array($uid, PDO::PARAM_INT));
     return $ans;
 }
@@ -854,21 +827,15 @@ function setCategories($uid, $rows) {
     $ans = null;
     for($i=0; $i<count($rows); $i++) {
         $name = $rows[$i]['name'];
-        $mtime = $rows[$i]['m_time'];
-        $data = $rows[$i]['data'];
         if(getCategoryIDFromName($uid, $name, true) == -1) {
-            $stmt = "INSERT INTO ".C_TABLE." (uid,name,ndx,m_time,data) VALUES (?,?,?,?,?)";
+            $stmt = "INSERT INTO ".C_TABLE." (uid,name,ndx) VALUES (?,?,?)";
             $ans = setDB($stmt, array($uid,   PDO::PARAM_INT,
-                                      $name,  PDO::PARAM_STR, 
-                                      $i,     PDO::PARAM_INT,
-                                      $mtime, PDO::PARAM_INT,
-                                      $data,  PDO::PARAM_STR));
+                                      $name,  PDO::PARAM_STR,
+                                      $i,     PDO::PARAM_INT));
         }
         else {
-            $stmt = "UPDATE ".C_TABLE." SET data=?, ndx=?, m_time=? WHERE name=?";
-            $ans = setDB($stmt, array($data,  PDO::PARAM_STR,
-                                      $i,     PDO::PARAM_INT,
-                                      $mtime, PDO::PARAM_INT,
+            $stmt = "UPDATE ".C_TABLE." SET ndx=? WHERE name=?";
+            $ans = setDB($stmt, array($i,     PDO::PARAM_INT,
                                       $name,  PDO::PARAM_STR));
         }
     }
@@ -891,23 +858,10 @@ function getCategoryIDFromName($uid, $category, $all=false) {
 function createCategory($uid, $name, $i, $mtime) {
     $data = array("modified" => false);
     $jdata = json_encode($data, true);
-    $stmt = "INSERT INTO ".C_TABLE." (name,uid,ndx,m_time,data) VALUES (?,?,?,?,?)";
-    $ans = setDB($stmt, array($name,  PDO::PARAM_STR, 
+    $stmt = "INSERT INTO ".C_TABLE." (name,uid,ndx) VALUES (?,?,?)";
+    $ans = setDB($stmt, array($name,  PDO::PARAM_STR,
                               $uid,   PDO::PARAM_INT,
-                              $i,     PDO::PARAM_INT, 
-                              $mtime, PDO::PARAM_INT, 
-                              $jdata, PDO::PARAM_STR));
-}
-function getCategoryMtime($uid, $name) {
-    $stmt = "SELECT m_time FROM ".C_TABLE." WHERE uid=? AND name=? ;";
-    $ans  = getDB($stmt, array($uid, PDO::PARAM_INT, $name, PDO::PARAM_STR));
-    return $ans[0][0];
-}
-function getCategoryData($uid, $name) {
-    $stmt = "SELECT m_time,data FROM ".C_TABLE." WHERE uid=? AND name=? ;";
-    $ans = getDB($stmt, array($uid, PDO::PARAM_INT, $name, PDO::PARAM_STR));
-    $ans[0][0] += 0; //cast
-    return $ans[0];
+                              $i,     PDO::PARAM_INT));
 }
 
 // =====================================================================
@@ -1015,12 +969,13 @@ function updateEventsForUser($uid) {
     $username = getUsernameFromID($uid);
     $cert = getCert($uid);
     $wpids = WPGetMediaIDs($username, $cert[0]);
-    $wpids = explode(",", $allID);
+    $wpids = explode(",", $wpids);
 
     $pid = getPageIDFromName($uid, "note", true);
     $stmt = "SELECT eid,data FROM ".E_TABLE." WHERE uid=? AND pid=? ORDER BY start DESC";
     $ans = getDB($stmt, array($uid, PDO::PARAM_INT, $pid, PDO::PARAM_INT));
     for($i=0; $i<count($ans); $i++) {
+        $eid = $ans[$i][0];
         $data = json_decode($ans[$i][1], true);
         $shouldHaveAudio = in_array($ans[$i][0], $wpids);
         // remove the audio tag from all events which no longer have an existing audio file.
@@ -1033,7 +988,7 @@ function updateEventsForUser($uid) {
         }
         // add the audio tag to all events which have an existing audio file.
         else if(!isset($data['audio']) && $shouldHaveAudio) {
-            $url = WPGetMediaURL($username, $cert, $ans[$i][0]);
+            $url = WPGetMediaURL($username, $cert, $eid);
             $ext = pathinfo($url, PATHINFO_EXTENSION);
             $data['audio'] = $ext;
             $jdata = json_encode($data, true);
@@ -1079,7 +1034,7 @@ function queryEventsForUser($uid, $opt) {
     if(isset($opt['max'])) {
         // We want the most recent events, so apply the limit to the acending series and swap.
         $max = intval($opt['max']);
-	$stmt .= " LIMIT $max";
+	    $stmt .= " LIMIT $max";
         //$stmt = "SELECT * FROM (" . $stmt . ") a  ORDER BY a.start DESC LIMIT $max" ;
     }
 
@@ -1213,7 +1168,8 @@ function createEvent($e) {
         $eid = $dbh->lastInsertId();
         return 0+ $eid;
 
-    } catch (PDOException $e) {
+    }
+    catch (PDOException $e) {
         DBG( "Error!: " . $e->getMessage() );
     }
     return -1;
@@ -1287,9 +1243,7 @@ function createDB() {
         "cid INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,             ".
         "uid INT(11) NOT NULL,                                     ".
         "ndx INT(11) NOT NULL,                                     ".
-        "m_time BIGINT(16) DEFAULT NULL,                           ".
         "name VARCHAR(45) DEFAULT NULL,                            ".
-        "data LONGBLOB,                                            ".
         "PRIMARY KEY (cid)                                         ".
         "  ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1  ";
     queryDB( $sql );
@@ -1320,19 +1274,22 @@ function deleteDB() {
 // This method does not use bound variables, and should not be used
 // for any user-supplied parameters.
 function queryDB($statement) {
+    $ans = array();
     global $DBconnect, $DBuser, $DBpass, $DBopts;
     try {
         $dbh = new PDO($DBconnect, $DBuser, $DBpass, $DBopts);
         $stmt = $dbh->prepare($statement);
         $ans = $stmt->execute();
-        return $ans;
-    } catch (PDOException $e) {
+    }
+    catch (PDOException $e) {
         DBG( "Error 1: " . $e->getMessage() );
     }
+    return $ans;
 }
 
 
 function getDB($statement, $arr) {
+    $ans = array();
     global $DBconnect, $DBuser, $DBpass, $DBopts;
     //DBG($DBconnect . $DBuser . $DBpass );
     try {
@@ -1347,13 +1304,15 @@ function getDB($statement, $arr) {
         $stmt->execute();
 
         $ans = $stmt->fetchAll();
-        return $ans;
-    } catch (PDOException $e) {
+    }
+    catch (PDOException $e) {
         DBG( "Error 2: " . $e->getMessage() );
     }
+    return $ans;
 }
 
 function getDBEvents($statement, $arr) {
+    $ans = array();
     global $DBconnect, $DBuser, $DBpass, $DBopts;
     //DBG($DBconnect . $DBuser . $DBpass );
     try {
@@ -1367,7 +1326,7 @@ function getDBEvents($statement, $arr) {
 
         // call the stored procedure
         $stmt->execute();
-        $eid; $uid; $cid; $pid; $start; $duration; $type; $data;
+        $eid = $uid = $cid = $pid = $start = $duration = $type = $data = null;
         $stmt->bindColumn('eid',      $eid,      PDO::PARAM_INT);
         $stmt->bindColumn('uid',      $uid,      PDO::PARAM_INT);
         $stmt->bindColumn('cid',      $cid,      PDO::PARAM_INT);
@@ -1378,7 +1337,6 @@ function getDBEvents($statement, $arr) {
         $stmt->bindColumn('data',     $data,     PDO::PARAM_STR, 128 * 1024);
 
         $index = 0;
-        $ans = array();
         while ($row = $stmt->fetch(PDO::FETCH_BOUND)) {
             $ans[$index][E_EID]      = $eid;
             $ans[$index][E_UID]      = $uid;
@@ -1390,14 +1348,16 @@ function getDBEvents($statement, $arr) {
             $ans[$index][E_DATA]     = $data;
             $index = $index + 1;
         }
-        return $ans;
-    } catch (PDOException $e) {
+    }
+    catch (PDOException $e) {
         DBG( "Error 3: " . $e->getMessage() . $statement );
     }
+    return $ans;
 }
 
 
 function setDB( $statement, $arr ) {
+    $ans = array();
     global $DBconnect, $DBuser, $DBpass, $DBopts;
     try {
         $dbh = new PDO($DBconnect, $DBuser, $DBpass, $DBopts);
@@ -1408,10 +1368,10 @@ function setDB( $statement, $arr ) {
         }
         // call the stored procedure
         $ans = $stmt->execute();
-        return $ans;
     } catch (PDOException $e) {
         DBG( "Error 4: " . $e->getMessage() . $statement );
     }
+    return $ans;
 }
 
 // =====================================================================

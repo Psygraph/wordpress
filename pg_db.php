@@ -150,6 +150,11 @@ function pg_getAllMediaIDs($username) {
     }
     return $ids;
 }
+// get the number of existing uploaded media for a user
+function pg_numUploadedMedia($username) {
+    $ids = pg_getAllMediaIDs($username);
+    return count($ids);
+}
 // get media ID's for all media files stored for the user.
 function pg_getAllPostIDs($username) {
     $ids = array();

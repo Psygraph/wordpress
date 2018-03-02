@@ -106,12 +106,18 @@ function pg_wp_uploadMedia($username, $eid, $filename, $fileSrc, $title, $text, 
     
     $attachment_id = pg_getMediaID($username, $eid);
     $post_id       = pg_getPostID($username, $eid);
+    $num_uploads   = pg_numUploadedMedia($username);
 
     // try uploading the media attachment
-    if(!$attachment_id && $filename!=""  && 
-        pg_settingsValue("upload") &&
-        user_can($user->ID, "upload_files")
-    ) {
+    if(!$attachment_id && $filename!="")
+    {
+        if($num_uploads >= pg_settingsValue("upload")) {
+
+            return "User ".$username." has reached the file upload limit.";
+        }
+        if(user_can($user->ID, "upload_files")) {
+            return "User ".$username." is not permitted to upload files.";
+        }
         $filetype = wp_check_filetype($filename);
         $type = $filetype['type'];
         //if($type=="audio/mpeg")

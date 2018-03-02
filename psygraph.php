@@ -48,11 +48,22 @@ function pg_query_vars($aVars) {
 add_filter('query_vars', 'pg_query_vars');
 
 // hook pg_rewrite_rule into rewrite_rules_array
-function pg_rewrite_rule() {
+function pg_init() {
     $page = pg_settingsValue("page");
     add_rewrite_rule('^'.$page.'/([^/]+)/?', 'index.php?pagename=psygraph_template&pg_username=$matches[1]', 'top');
+    wp_register_style('psygraph', plugins_url('psygraph.css',__FILE__ ));
+    wp_register_script( 'psygraph', plugins_url('psygraph.js',__FILE__ ));
 }
-add_action('init', 'pg_rewrite_rule');
+add_action('init', 'pg_init');
+
+// use the registered psygraph js and css
+function pg_enqueue_scripts() {
+    wp_enqueue_style('psygraph');
+    wp_enqueue_script('psygraph');
+    wp_enqueue_script('jquery');
+}
+
+add_action('wp_enqueue_scripts', 'pg_enqueue_scripts');
 
 // make sure that we can upload M4A files
 //add_filter('upload_mimes', 'pg_upload_types', 1, 1);

@@ -65,7 +65,7 @@ function getCertCmd($FORM) {
     if(! verifyCert($uid, $cert[0]))
         print("Cert is not valid: ". $cert[1] ." ". time() ."\n");
 
-    if(WPCheckUser($FORM['username']) != 1)
+    if(WPCheckUser($FORM['username']) == 0)
         print("User didn't check out\n");
 
     print $cert[0];

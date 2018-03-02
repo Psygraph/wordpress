@@ -21,7 +21,6 @@ function pg_xmlrpcMethods($methods)
     return $methods;
 }
 
-
 function pg_getServerVars($args) {
     global $wp_xmlrpc_server;
     $wp_xmlrpc_server->escape( $args );
@@ -97,7 +96,7 @@ function pg_uploadMedia($args) {
     $filename    = sanitize_text_field( $args[3] );
     $fileSrc     = sanitize_text_field( $args[4] );
     $title       = sanitize_text_field( $args[5] );
-    $text        = $args[6];//htmlspecialchars_decode($args[6]); // decoding done by XMLRPC
+    $text        = $args[6]; //htmlspecialchars_decode($args[6]); // decoding done by XMLRPC
     $category    = sanitize_text_field( $args[7] );
     if(!pg_verifyCert($username, $cert))
         return "Invalid credentials for uploading media";

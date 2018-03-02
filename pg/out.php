@@ -60,8 +60,8 @@ function printHeader($FORM) {
             $mime = "application/psygraph";
         }
         else {
-            fwrite($file, "UNRECOGNIZED MIME TYPE");
-            error(3);
+            //fwrite($file, "UNRECOGNIZED MIME TYPE");
+            exit(3);
         }
         header("Content-type: $mime");
         $date = strftime("%Y-%m-%d", time()+getLocalTZOffset());
@@ -324,8 +324,8 @@ function out_writeJSON($FORM, $file) {
     else if($signal == "heartRate" ||
             $signal == "analog1"   ||
             $signal == "analog2"   ||
-            $signal == "temperature"   ||
-    ) {
+            $signal == "temperature")
+    {
         $output[] = array("time",$signal);
         for($i=0; $i<$maxE; $i++) {
             $json = $e[$i][E_DATA];

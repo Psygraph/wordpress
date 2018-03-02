@@ -9,6 +9,18 @@ require_once("./testParams.php");
 $params = getParams($argv);
 $tempDir = $params['tempDir'];
 
+print("Testing date\n");
+$d  = "2015-07-08 22:14:48.9";
+//$d2 = "2015-07-08 22:14:48.9";
+$t  = unformatTime($d);
+//$t2 = unformatTime($d2);
+$d3 = formatTime($t);
+//check($t, $t2);
+check(1436393688900, $t);
+check("2015-07-08 22:14:48.900", $d3);
+
+sdiff("2015-07-08 22:14:48.900", "2015-07-08 22:14:48.901", 0);
+
 print("Deleting events\n");
 $out = test_command($params, "deleteEvents");
 check("Deleting events for test...\nDeleted.\n", $out);
@@ -24,7 +36,7 @@ check("", $out);
 
 print("Testing CSV round trip\n");
 $test_file = test_output($params, "csv");
-checkFile($good_file, $test_file); // we dont write over good_test.csv
+checkFile($good_file, $test_file, $params); // we don't write over good_test.csv
 
 print("Now we have verified the round trip for CSV, check all file types.\n");
 testFormat($params, 'html');
@@ -62,22 +74,9 @@ testFormat($params, 'csv');
 
 print("Double check with JSON.\n");
 $out = test_output($params, "json");
-$old = file_get_contents($filename);
-checkFile($old, $out);
-
+checkFile($filename, $out, $params);
 
 // check event selection
-
-// test date
-print("Testing date\n");
-$d  = "2015-07-08 22:14:48.9";
-//$d2 = "2015-07-08 22:14:48.9";
-$t  = unformatTime($d);
-//$t2 = unformatTime($d2);
-$d3 = formatTime($t);
-//check($t, $t2);
-check(1436393688900, $t);
-check("2015-07-08 22:14:48.900", $d3);
 
 print("Testing date queries\n");
 //print( convertGMT("2015-07-08 22:14:40.90") );
@@ -89,13 +88,13 @@ $tp = $params;
 $tp['start'] = convertGMT("2015-07-08 22:14:40.90");
 $tp['end']   = convertGMT("2015-07-08 22:14:48.9");
 $out = test_output($tp, "csv");
-checkFile("good_startEnd.csv", $out, $params);
+checkFile("good_startEnd.csv", $out, $params, true);
 
 $tp['page']  = "note";
 $tp['start'] = "2015-07-01 22:14:40.90";
 $tp['end']   = "2015-07-09 22:14:48.9";
 $out = test_output($tp, "csv");
-checkFile("good_pageStartEnd.csv", $out, $params);
+checkFile("good_pageStartEnd.csv", $out, $params, true);
 
 print("SUCCESS\n");
 exit(0);
@@ -136,10 +135,10 @@ $out = test_output($params, "csv");
 
 
 
-
-function checkFile($old, $new, $params = null) {
-    if(check($old, $new, false)) { // if there was an error...
-        if($params && isset($params['force']) ) {
+function checkFile($old, $new, $params, $skipIds=false, $exit=false) {
+    print("Comparing old: $old to new: $new\n");
+    if(check($old, $new, $skipIds, $exit)) { // if there was an error...
+        if( $params['force'] ) {
             $cmd = "cp $new $old";
             print("Executing cmd: $cmd\n");
             exec($cmd);
@@ -150,7 +149,7 @@ function checkFile($old, $new, $params = null) {
     }
 }
 
-function check($desired, $actual, $exit=true) {
+function check($desired, $actual, $skipIds=false, $exit=true) {
     if(file_exists($desired))
         $old = file_get_contents($desired);
     else
@@ -160,7 +159,7 @@ function check($desired, $actual, $exit=true) {
     else
         $new = $actual;
     if($old != $new) {
-        $s = sdiff($old, $new, 0);
+        $s = sdiff($old, $new, $skipIds);
         if(count($s)) {
             print("+++++++++++++++++++++ ERROR ++++++++++++++++++++++++\n");
             print("OLD: \n" . $s['old'] . "\n");
@@ -175,9 +174,7 @@ function check($desired, $actual, $exit=true) {
     return 0;
 }
 
-function sdiff($old, $new, $ids) {
-    if(!isset($ids))
-        $ids = 0;
+function sdiff($old, $new, $skipIds=false) {
     $from_start = strspn($old ^ $new, "\0");        
     $from_end = strspn(strrev($old) ^ strrev($new), "\0");
 
@@ -195,8 +192,8 @@ function sdiff($old, $new, $ids) {
         $i++;
     while($old_diff && count($old_diff) > $j && numeric($old_diff[$j]))
         $j++;
-    if($i || $j) {  // skip this numerical difference, hopefully its an ID.
-        return sdiff( substr($new_diff,$i), substr($old_diff,$j), $ids++);
+    if(($i || $j) && $skipIds) { // skip this numerical difference, hopefully its an ID.
+        return sdiff( substr($old_diff,$j), substr($new_diff,$i), $skipIds);
     }
     
     $new = "$start<INS>$new_diff</INS>$end";
@@ -221,7 +218,7 @@ function testFormat($params, $ext) {
     $out = test_output($params, $ext);
     $userFile = "good_" .$user ."." .$ext;
     print("Testing format $ext\n");
-    checkFile($userFile, $out, $params);
+    checkFile($userFile, $out, $params, true);
 }
 
 ?>

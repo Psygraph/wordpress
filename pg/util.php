@@ -42,24 +42,6 @@ function getEventMedia($event, $mediaURL) {
 
 // =================================================
 
-// create a number from a string
-function unformatTime($str, $tzsec=0) {
-    $arr = explode(".", $str);
-    $time = 0;
-    $date = DateTime::createFromFormat('Y-m-d H:i:s', $arr[0] + $tzsec, new DateTimeZone('GMT'));
-    if($date) {
-        $time = $date->getTimestamp();//format('U');
-        //$time   += Time::Piece->localtime->tzoffset;
-        $time = $time * 1000;
-        if($arr > 1) {
-            $ms = str_pad($arr[1],3,"0", STR_PAD_RIGHT); // make sure it is at least three digits
-            $ms = substr($ms,0,3);
-            $time += intval( $ms );
-        }
-    }
-    return $time;
-}
-
 // convert a local string to a GMT string, or from a GMT string
 function convertGMT($str, $alreadyGMT = false) {
     $t = unformatTime($str);
@@ -135,6 +117,25 @@ function formatTime($ms, $tzsec = 0) {
     $date->setTimestamp($sec + $tzsec);
     $time = $date->format('Y-m-d H:i:s');
     $time = $time . "." . sprintf("%03d", $millis);
+    return $time;
+}
+
+// create a number from a string
+function unformatTime($str, $tzsec=0) {
+    $str = str_replace("\"", "", $str);
+    $arr = explode(".", $str);
+    $time = 0;
+    $date = DateTime::createFromFormat('Y-m-d H:i:s', $arr[0], new DateTimeZone('GMT'));
+    if($date) {
+        $time = $date->getTimestamp() + $tzsec;//format('U');
+        //$time   += Time::Piece->localtime->tzoffset;
+        $time = $time * 1000;
+        if($arr > 1) {
+            $ms = str_pad($arr[1],3,"0", STR_PAD_RIGHT); // make sure it is at least three digits
+            $ms = substr($ms,0,3);
+            $time += intval( $ms );
+        }
+    }
     return $time;
 }
 

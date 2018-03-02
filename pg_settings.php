@@ -25,7 +25,7 @@ function pg_settings_init() {
     add_settings_field('psygraph_createPosts', 'Create posts:', 'pg_settings_createPosts', 'Psygraph', 'psygraph_main');    
     add_settings_field('psygraph_deletePosts', 'Delete posts:', 'pg_settings_deletePosts', 'Psygraph', 'psygraph_main');
     add_settings_field('psygraph_postStatus', 'Post status:', 'pg_settings_postStatus', 'Psygraph', 'psygraph_main');
-    add_settings_field('psygraph_upload', 'Allow media uploads:', 'pg_settings_upload', 'Psygraph', 'psygraph_main');
+    add_settings_field('psygraph_upload', 'Media upload limit:', 'pg_settings_upload', 'Psygraph', 'psygraph_main');
 }
 
 // display the admin options page
@@ -70,7 +70,12 @@ function pg_settings_validate($input) {
     }
 
     // nothing to check for the following checkboxes
-    $options['upload'] = isset($input['upload']);
+    $options['upload'] = 0;
+    $allOpts = array(0,1,2,4,8,16,32,64,128,256,512,1024);
+    foreach($allOpts as $opt) {
+        if(! strcmp($opt, $input['upload'] ))
+            $options['upload'] = $opt;
+    }
     $options['createPosts'] = isset($input['createPosts']);
     $options['deletePosts'] = isset($input['deletePosts']);
     return $options;
@@ -90,10 +95,6 @@ function pg_settings_mainText() {
 function pg_settings_page() {
     $page = pg_settingsValue("page");
     echo "<input id='psygraph_page' name='psygraph_options[page]' size='40' type='text' value='".$page."' />";
-}
-function pg_settings_upload() {
-    $checked = pg_settingsValue("upload") ? "checked" : "";
-    echo "<input id='psygraph_upload' name='psygraph_options[upload]' type='checkbox' $checked />";
 }
 function pg_settings_createPosts() {
     $checked = pg_settingsValue("createPosts") ? "checked" : "";
@@ -115,6 +116,19 @@ function pg_settings_postStatus() {
     }
     echo "</select>";
 }
+function pg_settings_upload() {
+    //$checked = pg_settingsValue("upload") ? "checked" : "";
+    //echo "<input id='psygraph_upload' name='psygraph_options[upload]' type='checkbox' $checked />";
+    $value = pg_settingsValue("upload");
+    echo "<select id='psygraph_upload' name='psygraph_options[upload]' />";
+    $options = array(0,1,2,4,8,16,32,64,128,256,512,1024);
+    foreach($options as $opt) {
+        if(! strcmp($opt, $value))
+            echo "<option selected>" . $opt . "</option>";
+        else
+            echo "<option>" . $opt . "</option>";
+    }
+    echo "</select>";}
 
 // =====================================================================
 // Manage the options and user settings
@@ -131,7 +145,7 @@ function pg_settingsValue($name, $options = null) {
         $ans  = isset($options['postStatus']) ? $options['postStatus'] : "draft";
     break;
     case "upload":
-        $ans  = isset($options['upload']) && $options['upload'];
+        $ans  = isset($options['upload']) ? $options['upload'] : 0;
         break;
     case "createPosts":
         $ans  = isset($options['createPosts']) && $options['createPosts'];

@@ -2,17 +2,17 @@
 
 Contributors:      Alec Rogers
 Plugin Name:       Psygraph
-Plugin URI:        http://psygraph.com
-Tags:              notes, tracking, timer, stopwatch, time, audio, biofeedback
+Plugin URI:        https://psygraph.com
+Tags:              meditation, mindfulness, notes, tracking, timer, stopwatch, time, audio
 Author URI:        http://arborrhythms.com
 Author:            Alec Rogers
-Donate link:       http://psygraph.com/welcome/donate
+Donate link:       https://psygraph.com/welcome/about
 Requires at least: 3.0
-Tested up to:      4.2.2
-Stable tag:        0.2
-Version:           0.5
-License:           LGPLv3
-License URI:       http://www.gnu.org/licenses/lgpl-3.0.html
+Tested up to:      4.9.4
+Stable tag:        0.8.6
+Version:           0.8.6
+License:           CC
+License URI:       http://creativecommons.org/licenses/by/4.0
 
 This allows the Psygraph mobile app (a sophisticated notation and tracking app) to sync with your WordPress server.
 Post audio files, notes, timers, GPS and velocity data to your site automatically.
@@ -31,10 +31,11 @@ Install the plugin click "activate".
 N/A
 
 == Screenshots ==
-See "http://psygraph.com/app/screenshots" for iOS screenshots.
-See "http://psygraph.com/wordpress/screenshots" for WordPress screenshots.
+See "https://psygraph.com/app/screenshots" for iOS screenshots.
+See "https://psygraph.com/wordpress/screenshots" for WordPress screenshots.
 
 == Changelog ==
+0.8.6 Very nice app.
 0.5.0 Initial public release
 
 == Frequently Asked Questions ==

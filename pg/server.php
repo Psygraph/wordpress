@@ -23,7 +23,6 @@ function doAction($action, $FORM) {
     case "checkUser":
     case "login":
     case "settings":
-    case "getCategoryData":
     case "getPageData":
     case "getEventArray":
         $reason = checkUserPermission($username, "read");
@@ -64,7 +63,6 @@ function doAction($action, $FORM) {
         $data['cert']           = $FORM['cert'];
         $data['certExpiration'] = $FORM['certExpiration'];
         $data['categories']     = $FORM['categories'];
-        $data['categoryData']   = $FORM['categoryData'];
         $data['pages']          = $FORM['pages'];
         $data['pageData']       = $FORM['pageData'];
         $data['mtime']          = $FORM['mtime'];
@@ -76,13 +74,12 @@ function doAction($action, $FORM) {
         $user["username"]   = $FORM["username"];
         $user["categories"] = $pg["categories"];
         $user["pages"]      = $pg["pages"];
-        $cd                 = $pg["categoryData"];
         $pd                 = $pg["pageData"];
         //$ud                 = $pg["userData"];
         $mtime              = $pg['mtime'];
         $dbMtime            = getUserMtime($user["uid"]);
         if($mtime > $dbMtime) {
-            $data = updateUser($user, $cd, $pd, $mtime);
+            $data = updateUser($user, $pd, $mtime);
             printArray($data);
         }
         else {
@@ -92,21 +89,9 @@ function doAction($action, $FORM) {
     case "settingsData":
         $uid  = $FORM["uid"];
         $data = $FORM["data"];
-        $cd   = $data["categoryData"];
         $pd   = $data["pageData"];
-        updateUserData($uid, $cd, $pd);
+        updateUserData($uid, $pd);
         printArray( array() );
-        break;
-    case "getCategoryData":
-        $uid  = $FORM["uid"];
-        $data = $FORM["data"];
-        $ans = array();
-        foreach ($data as $category => $val) {
-            $d = getCategoryData($uid, $category);
-            $ans[$category]['mtime'] = $d[0];
-            $ans[$category]['data']  = $d[1];
-        }
-        printArray( $ans );
         break;
     case "getPageData":
         $uid  = $FORM["uid"];
