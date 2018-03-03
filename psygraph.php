@@ -3,7 +3,7 @@
 Plugin Name: Psygraph
 Plugin URI: http://psygraph.com
 Description: This plugin integrates with the Psygraph mobile app (an app that tracks your meditation, breathing, and mindfulness) to visualize your data in WordPress.  The provided shortcodes can do things like generate progress charts, show the history of meditation sessions, and allow playback of recorded audio notes.
-Version: 0.8.2
+Version: 0.8.6
 Author: Alec Rogers
 Author URI: http://arborrhythms.com
 License: http://creativecommons.org/licenses/by-sa/4.0/
