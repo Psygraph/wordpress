@@ -1,7 +1,4 @@
-=== Plugin Name ===
-
-Contributors:      Alec Rogers
-Plugin Name:       Psygraph
+=== Psygraph ===
 Plugin URI:        https://psygraph.com
 Tags:              meditation, mindfulness, notes, tracking, timer, stopwatch, time, audio
 Author URI:        http://arborrhythms.com
@@ -31,8 +28,8 @@ Install the plugin click "activate".
 N/A
 
 == Screenshots ==
-See "https://psygraph.com/app/screenshots" for iOS screenshots.
-See "https://psygraph.com/wordpress/screenshots" for WordPress screenshots.
+1. See "https://psygraph.com/app/help" for iOS screenshots.
+2. See "https://psygraph.com/app/wordpress" for WordPress screenshots.
 
 == Changelog ==
 0.8.6 Very nice app.
