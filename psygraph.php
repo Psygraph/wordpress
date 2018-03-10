@@ -12,11 +12,9 @@ License: http://creativecommons.org/licenses/by-sa/4.0/
 
 // activate/deactivate plugin
 require_once(plugin_dir_path(__FILE__)."/pg_db.php");
+require_once(plugin_dir_path(__FILE__)."/pg_user.php");
 require_once(plugin_dir_path(__FILE__)."/pg_settings.php");
 
-register_activation_hook( __FILE__, 'pg_activate' );
-register_deactivation_hook( __FILE__, 'pg_deactivate' );
-register_uninstall_hook( __FILE__, 'pg_uninstall' );
 
 // remove any data when a user is deleted
 add_action('delete_user', 'pg_deleteUserCB');
@@ -65,11 +63,60 @@ function pg_enqueue_scripts() {
 
 add_action('wp_enqueue_scripts', 'pg_enqueue_scripts');
 
-// make sure that we can upload M4A files
-//add_filter('upload_mimes', 'pg_upload_types', 1, 1);
-//function pg_upload_types($existing_mimes=array()){
-//    $existing_mimes['m4a'] = 'audio/m4a';
-//    return $existing_mimes;
-//}
+// =====================================================================
+// Handle plugin installation and removal
+// =====================================================================
+function pg_activate() {
+    global $wpdb;
+    $table_name = pg_getTableName();
+
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+      username varchar(45) NOT NULL PRIMARY KEY,
+      cert varchar(45) DEFAULT NULL,
+      time int(11) DEFAULT NULL
+    ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;";
+    $wpdb->query( $sql );
+
+    pg_createTemplate();
+
+    // Create a settings file for local installs of the pg server
+    // Make sure it is chmod 0600
+    $params = getPGPrefs(pg_wp_getVars());
+    $creds = request_filesystem_credentials(site_url() . '/wp-admin/', '', false, false, array());
+    if ( ! WP_Filesystem($creds) ) {
+        return;
+    }
+    global $wp_filesystem;
+    $wp_filesystem->put_contents(__DIR__."/pgConfig.xml", $params, (0600 & ~ umask()) ); //WP_PLUGIN_DIR."/psygraph/pgConfig.xml"
+
+    // add weekly and daily events
+    if (! wp_next_scheduled ( 'pg_weekly' )) {
+        wp_schedule_event(strtotime("Sunday 01:00"), 'weekly', 'pg_weekly');
+    }
+    add_action('pg_weekly', 'pg_run_weekly');
+    if (! wp_next_scheduled ( 'pg_daily' )) {
+        wp_schedule_event(strtotime("today 01:00"), 'daily', 'pg_daily');
+    }
+    add_action('pg_daily', 'pg_run_daily');
+}
+register_activation_hook( __FILE__, 'pg_activate' );
+
+function pg_deactivate() {
+    global $wpdb;
+    $table_name = pg_getTableName();
+
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    $wpdb->query( "DROP TABLE IF EXISTS ".$table_name .";");
+
+    wp_clear_scheduled_hook('pg_weekly');
+    wp_clear_scheduled_hook('pg_daily');
+}
+register_deactivation_hook( __FILE__, 'pg_deactivate' );
+
+function pg_uninstall() {
+    pg_deleteTemplate();
+}
+register_uninstall_hook( __FILE__, 'pg_uninstall' );
+
 
 ?>

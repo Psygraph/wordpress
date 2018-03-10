@@ -3,6 +3,12 @@
 require_once("pg.php");
 require_once("util.php");
 
+// first, just make sure we could read the DB
+if($DBhost==="") {
+    printArray(array("error" => "Could not read Database"));
+    return;
+}
+
 $FORM = json_decode(file_get_contents("php://input", TRUE), true);
 
 if(! $FORM) {

@@ -14,7 +14,9 @@ function pg_url() {
 function pg_serverUrl() {
     return pg_url() . "/pg";
 }
-
+function pg_hostUrl() {
+    return home_url();
+}
 // =====================================================================
 // Manage the user certificate
 // =====================================================================
@@ -42,7 +44,7 @@ function pg_createCert($username) {
     // create a new certificate valid for 48 hours
     $cert = bin2hex(openssl_random_pseudo_bytes(10));
     $time = time() +(48 *60 *60);
-    $sql = "INSERT INTO $table_name (username, cert, time) VALUES ('$username', '$cert', '$time') ON DUPLICATE KEY UPDATE cert='$cert', time='$time' ;";
+    $sql  = "INSERT INTO $table_name (username, cert, time) VALUES ('$username', '$cert', '$time') ON DUPLICATE KEY UPDATE cert='$cert', time='$time' ;";
     $wpdb->query($sql);
     return $cert;
 }
@@ -250,43 +252,63 @@ function pg_createPost($user_id, $eid, $attachment_id, $title, $text, $category)
 }
 
 // =====================================================================
-// Handle plugin installation and removal
+// Utilities for HTTP
 // =====================================================================
-function pg_activate() {
-    global $wpdb;
-    $table_name = pg_getTableName();
+function post_request($url, $data, $optional_headers = null, $getresponse = true) {
+    $data = http_build_query($data);
+    $proto = "http";
+    //if(preg_match("/https/", $url))
+    //    $proto = "https";
+    $params = array($proto => array(
+        'method' => 'POST',
+        'content' => $data,
+        'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
+            . "Content-Length: " . strlen($data) . "\r\n",
+        //'header' => 'Content-Type: application/x-www-form-urlencoded' . PHP_EOL
+    ));
 
-    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
-      username varchar(45) NOT NULL PRIMARY KEY,
-      cert varchar(45) DEFAULT NULL,
-      time int(11) DEFAULT NULL
-    ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;";
-    $wpdb->query( $sql );
-
-    pg_createTemplate();
-
-    // Create a settings file for local installs of the pg server
-    // Make sure it is chmod 0600
-    $params = getPGPrefs(pg_wp_getVars());
-    $creds = request_filesystem_credentials(site_url() . '/wp-admin/', '', false, false, array());
-    if ( ! WP_Filesystem($creds) ) {
-        return;
+    if ($optional_headers !== null) {
+        $params[$proto]['header'] = $optional_headers;
     }
-    global $wp_filesystem;
-    $wp_filesystem->put_contents(__DIR__."/pgConfig.xml", $params, (0600 & ~ umask()) ); //WP_PLUGIN_DIR."/psygraph/pgConfig.xml"
+    $ctx = stream_context_create($params);
+    $fp = @fopen($url, 'rb', false, $ctx);
+    if (!$fp) {
+        return "";
+    }
+    if ($getresponse){
+        $response = stream_get_contents($fp);
+        return $response;
+    }
+    return "";
 }
+function get_request($url, $data, $optional_headers = null, $getresponse = true) {
+    $data = http_build_query($data);
+    $url .= "?".$data;
+    $proto = "http";
+    //if(preg_match("/https/", $url))
+    //    $proto = "https";
+    $params = array($proto => array(
+        'method' => 'GET'
+        //'header' => 'Content-Type: application/x-www-form-urlencoded' . PHP_EOL
+    ));
 
-function pg_deactivate() {
+    if ($optional_headers !== null) {
+        $params[$proto]['header'] = $optional_headers;
+    }
+    $ctx = stream_context_create($params);
+    $fp  = @fopen($url, 'rb', false, $ctx);
+    if (!$fp) {
+        return "";
+    }
+    if ($getresponse){
+        $response = stream_get_contents($fp);
+        return $response;
+    }
+    return "";
 }
-function pg_uninstall() {
-    global $wpdb;
-    $table_name = pg_getTableName();
-
-    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-    $wpdb->query( "DROP TABLE IF EXISTS ".$table_name .";");
-
-    pg_deleteTemplate();
-}
+// =====================================================================
+// Get preferences from the XML file
+// =====================================================================
 
 function getPGPrefs($arr) {
     $str = "<methodResponse><params>".
@@ -302,45 +324,6 @@ function getPGPrefs($arr) {
     return $str;
 }
 
-// =====================================================================
-// If a user deletes their WP account, delete all media files they uploaded using Psygraph.
-// =====================================================================
-
-function pg_deleteUserCB($userID) {
-    global $wpdb;
-    $table_name = pg_getTableName();
-    
-    // delete the user from the database
-    $user = get_userdata($userID);
-    $username = $user->user_login;
-    $sql = "DELETE FROM $table_name WHERE username='$username'";
-    $wpdb->query($sql);
-    
-    // delete all media for the user
-    $ids = pg_getAllEventIDs($username);
-    foreach ($ids as $id) {
-        if ( false === wp_delete_attachment( $id ) ) {
-            // Log failure to delete attachment.
-        }
-    }
-    /*
-    $postID = pg_getUserPostID($username);
-    if(!$postID) 
-        return;
-    $attachments = get_posts( array(
-                                  'post_type'      => 'attachment',
-                                  'posts_per_page' => -1,
-                                  'post_status'    => 'any',
-                                  'post_parent'    => $postID
-                                  ) );
-    foreach ( $attachments as $file ) {
-        if ( false === wp_delete_attachment( $file->ID ) ) {
-            // Log failure to delete attachment.
-        }
-    }
-    wp_delete_post($postID);
-    */
-}
 
 
 ?>

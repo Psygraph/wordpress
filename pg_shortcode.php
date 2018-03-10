@@ -1,37 +1,7 @@
 <?php
 
 require_once( "pg_db.php" );
-
-function pg_getCurrentUsername() {
-    $current_user     = wp_get_current_user();
-    $current_username = $current_user->user_login;
-    return $current_username;
-}
-
-function pg_getPageUsername() { // return the user's page
-    $username = "foobar";
-    if(get_query_var('pg_username')) {
-        $username = get_query_var('pg_username');
-        if($username == "current")
-            $username = pg_getCurrentUsername();
-    }
-    #else {
-    #    $post_id = get_the_ID();
-    #    $author_id = get_post_field( 'post_author', $post_id );
-    #    $user = get_user_by('id', $author_id);
-    #    $username = $user->user_login;
-    #}
-    return $username;
-}
-function pg_isOwner() {
-    return pg_getPageUsername() == pg_getCurrentUsername();
-}
-function pgUser_publicAccess() {
-    return pg_query( pg_getPageUsername(), "publicAccess");
-}
-function pgUser_createPosts() {
-    return pg_query( pg_getPageUsername(), "createPosts" );
-}
+require_once( "pg_user.php" );
 
 // [pg_link] return a link
 function pg_linkShortcode( $atts ) {
@@ -60,7 +30,7 @@ function pg_linkShortcode( $atts ) {
     $url .= "&format="   . $atts['format'];
     $url .= "&username=" . $atts['username'];
     if(pg_isOwner())
-        $url .= "&cert="     . $atts['cert'];
+        $url .= "&cert=" . $atts['cert'];
     $url .=  "\">"       . $atts['linktext'] . "</a>";
     return $url;
 }
@@ -140,7 +110,6 @@ function pg_pageShortcode( $atts ) {
     $height   = $atts['height'];
     $width    = $atts['width'];
 
-
     if($page == "input") {
         $format = $atts['format'];
         return generateInput($username, $cert, $format);
@@ -149,8 +118,7 @@ function pg_pageShortcode( $atts ) {
         return generateAudio($username);
     }
     else if($page == "client") {
-        $username = pg_getCurrentUsername();
-        $cert     = pg_getCert($username);
+        $cert = pg_getCert($username);
         return generatePsygraph($username, $cert, $height, $width);
     }
     else if($page == "user") {
@@ -165,14 +133,20 @@ function pg_pageShortcode( $atts ) {
         $cert     = pg_getCert($username);
         return generateAdmin($username, $cert, $height, $width);
     }
+    else if($page == "test_daily") {
+        return pg_run_daily();
+    }
+    else if($page == "test_weekly") {
+        return pg_run_weekly();
+    }
     else {
         return "<p>Unknown page requested: $page</p>";
     }
 }
 
 function generatePsygraph($username, $cert, $height, $width) {
-    $server = pg_serverUrl();
-    $url  = "https://psygraph.com/webclient/wp.php";
+    $server = pg_hostUrl();
+    $url  = $server . "/webclient/wp.php";
     $url .= "?username=" . urlencode($username);
     // OK to use cert here, since it is only for the current_user.
     $url .= "&cert="     . urlencode($cert);
@@ -390,70 +364,6 @@ function generateAdmin($username, $cert, $height, $width) {
         $response .= '<p>You must be the logged-in owner of this page in order to make administrative changes.</p>';
     }
     return $response;
-}
-
-function pg_query($username, $query) {
-    $url = pg_serverUrl() . "/admin.php";    
-    $atts['query']    = $query;
-    $atts['username'] = $username;
-    // PHP post requests were disabled by hostgator.  lame.
-    //$resp = post_request($url, $atts);
-    $resp = get_request($url, $atts);
-    $s = json_decode($resp, true);
-    return $s[$query];
-}
-
-function post_request($url, $data, $optional_headers = null, $getresponse = true) {
-    $data = http_build_query($data);
-    $proto = "http";
-    //if(preg_match("/https/", $url))
-    //    $proto = "https";
-    $params = array($proto => array(
-        'method' => 'POST',
-        'content' => $data,
-        'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
-        . "Content-Length: " . strlen($data) . "\r\n",
-        //'header' => 'Content-Type: application/x-www-form-urlencoded' . PHP_EOL
-    ));
-    
-    if ($optional_headers !== null) {
-        $params[$proto]['header'] = $optional_headers;
-    }
-    $ctx = stream_context_create($params);
-    $fp = @fopen($url, 'rb', false, $ctx);
-    if (!$fp) {
-        return "";
-    }
-    if ($getresponse){
-        $response = stream_get_contents($fp);
-        return $response;
-    }
-    return "";
-}
-function get_request($url, $data, $optional_headers = null, $getresponse = true) {
-    $data = http_build_query($data);
-    $url .= "?".$data;
-    $proto = "http";
-    //if(preg_match("/https/", $url))
-    //    $proto = "https";
-    $params = array($proto => array(
-        'method' => 'GET'
-        //'header' => 'Content-Type: application/x-www-form-urlencoded' . PHP_EOL
-    ));
-    
-    if ($optional_headers !== null) {
-        $params[$proto]['header'] = $optional_headers;
-    }
-    $ctx = stream_context_create($params);
-    $fp  = @fopen($url, 'rb', false, $ctx);
-    if (!$fp) {
-        return "";
-    }
-    if ($getresponse){
-        $response = stream_get_contents($fp);
-        return $response;
-    }
-    return "";
 }
 
 

@@ -200,7 +200,7 @@ function handleLogin($FORM) {
     createDB();
     $uid = -1;
     if(isset($FORM["password"]) && 
-       $FORM["password"] != "") {
+       $FORM["password"] !== "") {
         $password = $FORM["password"];
         // See if the user exists in WP.
         if(WPAuthenticate($username, $password)) {
@@ -763,8 +763,9 @@ function getUserData($uid) {
 function setUserData($uid, $data, $local=false) {
     // Since the publicAccess field is set independently, modify data with the current setting.
     if(! $local) {
-        $data['publicAccess'] = getUserDataValue($uid, 'publicAccess');
-        $data['createPosts'] = getUserDataValue($uid, 'createPosts');
+        $data['publicAccess']   = getUserDataValue($uid, 'publicAccess');
+        $data['createPosts']    = getUserDataValue($uid, 'createPosts');
+        $data['emailFrequency'] = getUserDataValue($uid, 'emailFrequency');
     }
     $stmt  = "UPDATE ".U_TABLE." SET data=? WHERE uid=?";
     $jdata = json_encode($data, true);
@@ -784,6 +785,14 @@ function getUserDataValue($uid, $name) {
                 $ans = false;
             break;
         }
+        case "emailFrequency": {
+            $data = getUserData($uid);
+            if (array_key_exists($name, $data))
+                $ans = $data[$name];
+            else
+                $ans = "never";
+            break;
+        }
         default: {
             $username = getUsernameFromID($uid);
             $cert = getCert($uid);
@@ -797,7 +806,8 @@ function setUserDataValue($uid, $name, $value) {
     $ans = "";
     switch($name) {
         case "createPosts":
-        case "publicAccess": {
+        case "publicAccess":
+        case "emailFrequency": {
             $data = getUserData($uid);
             $data[$name] = $value;
             setUserData($uid, $data, true);

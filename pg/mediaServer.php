@@ -46,7 +46,7 @@ function doAction($action, $FORM) {
         //$fileDest = $fileSrc . ".m4a";
         //move_uploaded_file($fileSrc, $fileDest);
         $rslt = WPUploadMedia($username, $cert, $eid, $filename, $fileSrc, $title, $text, $loc, $category);
-        printResult( $rslt );        
+        printResult( $rslt );
     }
     else if($action == "downloadFile")
     {

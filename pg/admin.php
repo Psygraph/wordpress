@@ -7,7 +7,7 @@ $FORM = getHttpParams();
 
 if(isset($FORM['query']) && isset($FORM['username']) ) {
     $query = $FORM['query'];
-    if($query == "publicAccess" || $query == "createPosts") {
+    if($query == "publicAccess" || $query == "createPosts" || $query == "emailFrequency") {
         $uid  = getIDFromUsername( $FORM["username"] );
         $data = array();
         $data[$query] = getUserDataValue($uid, $query);
@@ -37,14 +37,20 @@ if(isset( $FORM['respond']) && $FORM['respond']) {
     setUserDataValue($FORM['uid'], "publicAccess", $publicAccess);
     $createPosts = strcmp($FORM['createPosts'], "on") ? 0 : 1;
     setUserDataValue($FORM['uid'], "createPosts", $createPosts);
+    $emailFrequency = $FORM['emailFrequency'];
+    setUserDataValue($FORM['uid'], "emailFrequency", $emailFrequency);
     $response  = "<h2>Changes processed.</h2>\n";
 
     $publicAccess = getUserDataValue($FORM['uid'], "publicAccess");
     $string = $publicAccess ? "on" : "off";
     $response .= "Public access: ".$string."<br/>\n";
+
     $createPosts = getUserDataValue($FORM['uid'], "createPosts");
     $string = $createPosts ? "on" : "off";
     $response .= "Create posts: ".$string."<br/>\n";
+
+    $emailFrequency = getUserDataValue($FORM['uid'], "emailFrequency");
+    $response .= "Email Frequency: ".$emailFrequency."<br/>\n";
 
     $response .= "<hr/>";
     $response .= "<p><a href='javascript:history.back()'>Go back</a></p>\n";
@@ -58,15 +64,27 @@ else {
     // publicAccess
     $string    = getUserDataValue($FORM['uid'], "publicAccess");
     $checked   = $string ? "checked" : "";
-    $response .= '<p><em>The following checkbox allows public web access to your data on this server.</em></p>';
+    $response .= '<p><em>Allow public web access to your data on this server.</em></p>';
     $response .= '<label for="publicAccess">Public access:</label>';
     $response .= '<input name="publicAccess" id="publicAccess"  type="checkbox" '.$checked.' /><br/><br/>';
 
     $string    = getUserDataValue($FORM['uid'], "createPosts");
     $checked   = $string ? "checked" : "";
-    $response .= '<p><em>The following checkbox creates public WordPress posts on this server.</em></p>';
+    $response .= '<p><em>Create public WordPress posts on this server.</em></p>';
     $response .= '<label for="createPosts">Create posts:</label>';
     $response .= '<input name="createPosts" id="createPosts"  type="checkbox" '.$checked.' /><br/><br/>';
+
+    $string    = getUserDataValue($FORM['uid'], "emailFrequency");
+    $response .= '<p><em>Specify how often you would like to receive emails showing your progress.</em></p>';
+    $response .= '<label for="emailFrequency">Email frequency:</label>';
+    $response .= '<select name="emailFrequency" id="emailFrequency">';
+    $selected  = $string=="never"? "selected" : "";
+    $response .= '<option value="never" '.$selected.'>never</option>';
+    $selected  = $string=="daily"? "selected" : "";
+    $response .= '<option value="daily" '.$selected.'>daily</option>';
+    $selected  = $string=="weekly"? "selected" : "";
+    $response .= '<option value="weekly" '.$selected.'>weekly</option>';
+    $response .= '</select><br/><br/>';
 
     $response .= '<input type="hidden" name="respond"  value="true"  id="respond"/>';
     $response .= '<input type="hidden" name="server"   value="'. $FORM['server']. '"   id="format"/>';

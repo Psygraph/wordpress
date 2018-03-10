@@ -31,8 +31,8 @@ function drawJSON(jdata, ND, field, element, height, width) {
     var arr  = JSON.parse(jdata);
     var data = new vis.DataSet([]);
     for (var i=1; i < arr.length; i++) {
-        if (field=="acceleration") {
-            if(ND==2) {
+        if (field==="acceleration") {
+            if(ND===2) {
 	            var norm = arr[i][1]*arr[i][1];
 	            norm += arr[i][2]*arr[i][2];
 	            norm += arr[i][3]*arr[i][3];
@@ -58,15 +58,15 @@ function drawJSON(jdata, ND, field, element, height, width) {
 	interpolation: false,
 	dataAxis: {left: {format: axisLabelFormat}}
     };
-    if(ND==2) {
-        if(data.length==0)
+    if(ND===2) {
+        if(data.length===0)
             data.add({x:new Date(), y:0});
         var graph2d = new vis.Graph2d(document.getElementById(element), data, options);
         graph2d.redraw();
         graph2d.fit();
     }
-    else if(ND==3) {
-        if(data.length==0)
+    else if(ND===3) {
+        if(data.length===0)
             data.add({x:0, y:0, z:0});
         var graph3d = new vis.Graph3d(document.getElementById(element), data, options);
     }
@@ -79,7 +79,7 @@ function drawCSV(csv, element) {
     var data = new vis.DataSet();
     var type = "acceleration";
     for (var i = 1; i < csvArray.length; i++) {
-        if (type=="acceleration") {
+        if (type==="acceleration") {
             data.add({x:csvArray[i][1],
                       y:csvArray[i][2],
                       z:csvArray[i][3]});
