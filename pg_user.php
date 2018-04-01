@@ -71,7 +71,7 @@ function pg_run_daily() {
     $ret = "Sending mail to: ";
     foreach ($users as $username) {
         if(pgUser_emailFrequency($username) == "daily") {
-            $ret .= " " . pg_sendEmail($username);
+            $ret .= " " . pg_sendStatusEmail($username);
         }
     }
     return $ret;
@@ -81,34 +81,63 @@ function pg_run_weekly() {
     $ret = "Sending mail to: ";
     foreach($users as $username) {
         if(pgUser_emailFrequency($username) == "weekly") {
-            $ret .= " " . pg_sendEmail($username);
+            $ret .= " " . pg_sendStatusEmail($username);
         }
     }
     return $ret;
 }
-function pg_sendEmail($username) {
+function pg_sendStatusEmail($username) {
     $email = pg_getEmail($username);
     if(strpos($email, ".")===false ||
         strpos($email, "@")===false)
         return "";
-    $filename = get_temp_dir() . "status.png";
     $cert     = pg_getCert($username);
     $server   = pg_hostUrl();
     $url  = $server . "/webclient/wp.php";
     $url .= "?username=" . urlencode($username);
-    // OK to use cert here, since it is only for the current_user.
     $url .= "&cert="     . urlencode($cert);
     $url .= "&server="   . urlencode($server);
-    system("php ".__DIR__."/pg_screenshot.php \"$url\" $filename");
+
+    $cmd = "php ".__DIR__."/pg_screenshot.php \"$url\" $username";
+    $filename = "";
+    exec($cmd, $filename);
 
     $to          = $email;
-    $subject     = 'Psygraph status';
-    $body        = '<p>Attached is the graph of your recent activity.</p>';
-    $body       .= '<p>Read-only URL: '. $url .'</p>';
+    $subject     = "Psygraph status";
+    $body        = "<p>Dear $username,</p>";
+    $body       .= "<p>Attached is the graph of your recent activity.</p>";
+    $body       .= "<p>This graph was generated from a read-only version of the app at: $url</p>";
+    $body       .= "<p>Kind regards, <i>-Psygraph</i></p>";
+    //$body       .= '<p>Command: '. $cmd .'</p>';
+    //$body       .= '<p>Result: '. implode("\n", $filename) .'</p>';
     $headers     = array('Content-Type: text/html; charset=UTF-8');
-    $attachments = array($filename);
+    $attachments = $filename;
     wp_mail( $to, $subject, $body, $headers, $attachments);
     return $email;
+}
+function pg_sendUploadEmail($username, $postURL, $mediaURL) {
+    $email = pg_getEmail($username);
+    $cert  = pg_getCert($username);
+
+    //$postURL .= "?username=" . urlencode($username);
+    //$postURL .= "&cert="     . urlencode($cert);
+
+    $to          = $email;
+    $subject     = "Psygraph Note Uploaded";
+    $body        = "<p>Dear $username,</p>";
+    $body       .= "<p>Your recent Psygraph note has been uploaded.</p>";
+    $body       .= "<p>If you have turned on public access, that content is available at:</p>";
+    $body       .= "<ul>";
+    if($postURL != "") {
+        $body .= "<li>Post: $postURL</li>";
+    }
+    if($mediaURL != "") {
+        $body .= "<li>Media: $mediaURL</li>";
+    }
+    $body       .= "</ul>";
+    $body       .= "<p>Kind regards, <br/> <i>-Psygraph</i></p>";
+    $headers     = array('Content-Type: text/html; charset=UTF-8');
+    wp_mail( $to, $subject, $body, $headers);
 }
 
 function pg_getEmail($username) {

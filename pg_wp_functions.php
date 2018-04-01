@@ -115,26 +115,25 @@ function pg_wp_uploadMedia($username, $eid, $filename, $fileSrc, $title, $text, 
 
             return "User ".$username." has reached the file upload limit.";
         }
-        if(user_can($user->ID, "upload_files")) {
+        if(! user_can($user->ID, "upload_files")) {
             return "User ".$username." is not permitted to upload files.";
         }
         $filetype = wp_check_filetype($filename);
         $type = $filetype['type'];
         //if($type=="audio/mpeg")
         //    $type = "audio/m4a";
-        $array = array( //array to mimic $_FILES
+        $filesArray = array( //array to mimic $_FILES
             'name'     => $filename,
             'type'     => $type,
             'tmp_name' => $fileSrc,
             'error'    => 0,
             'size'     => filesize($filename)
         );
-        $postID = 0;//pg_getUserPostID($username, true);
         $desc = "";
         $post_data = array();
         $post_data['post_author'] = $user->ID;
         //$overrides = array('mimes' => array('m4a' => 'audio/mp4') );
-        $attachment_id = media_handle_sideload($array, $postID);//, $desc, $post_data);
+        $attachment_id = media_handle_sideload($filesArray, 0); // do not initially attach to a post
         
         if( is_wp_error($attachment_id) ) {
             // There was an error uploading the media.
@@ -144,13 +143,14 @@ function pg_wp_uploadMedia($username, $eid, $filename, $fileSrc, $title, $text, 
         }
     }
 
-    if(! $post_id && 
-        $text != "" && 
+    $mediaURL = "";
+    if(! $post_id    && 
+        $text != ""  && 
         pg_settingsValue("createPosts")
     ) {
         if($attachment_id) {
-            $url = wp_get_attachment_url($attachment_id);
-            $text = str_replace("PG_MEDIA_URL", $url, $text);
+            $mediaURL = wp_get_attachment_url($attachment_id);
+            $text = str_replace("PG_MEDIA_URL", $mediaURL, $text);
         }
         else {
             $text = str_replace("PG_MEDIA_URL", "(File not found: check permissions)", $text);
@@ -159,6 +159,10 @@ function pg_wp_uploadMedia($username, $eid, $filename, $fileSrc, $title, $text, 
         if($err != "")
             return $err;
     }
+   
+    $postID  = pg_getPostID($username, $eid);
+    $postURL = get_permalink($postID);
+    pg_sendUploadEmail($username, $postURL, $mediaURL);
     return "OK";
 }
 

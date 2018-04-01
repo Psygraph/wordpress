@@ -90,14 +90,14 @@ function pg_activate() {
     $wp_filesystem->put_contents(__DIR__."/pgConfig.xml", $params, (0600 & ~ umask()) ); //WP_PLUGIN_DIR."/psygraph/pgConfig.xml"
 
     // add weekly and daily events
+    add_action('pg_weekly', 'pg_run_weekly');
     if (! wp_next_scheduled ( 'pg_weekly' )) {
         wp_schedule_event(strtotime("Sunday 01:00"), 'weekly', 'pg_weekly');
     }
-    add_action('pg_weekly', 'pg_run_weekly');
+    add_action('pg_daily', 'pg_run_daily');
     if (! wp_next_scheduled ( 'pg_daily' )) {
         wp_schedule_event(strtotime("today 01:00"), 'daily', 'pg_daily');
     }
-    add_action('pg_daily', 'pg_run_daily');
 }
 register_activation_hook( __FILE__, 'pg_activate' );
 

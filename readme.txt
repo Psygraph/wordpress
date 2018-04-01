@@ -6,8 +6,8 @@ Author:            Alec Rogers
 Donate link:       https://psygraph.com/welcome/about
 Requires at least: 3.0
 Tested up to:      4.9.4
-Stable tag:        0.8.7
-Version:           0.8.7
+Stable tag:        0.8.8
+Version:           0.8.8
 License:           CC
 License URI:       http://creativecommons.org/licenses/by/4.0
 
@@ -32,7 +32,7 @@ N/A
 2. See "https://psygraph.com/app/wordpress" for WordPress screenshots.
 
 == Changelog ==
-0.8.7 Send daily/weekly email
+0.8.8 Send daily/weekly email
 0.8.6 Very nice app
 0.5.0 Initial public release
 
