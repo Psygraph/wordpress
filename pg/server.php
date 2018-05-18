@@ -104,7 +104,10 @@ function doAction($action, $FORM) {
         $data = $FORM["data"];
         $ans = array();
         foreach ($data as $page => $val) {
-            $d = getPageData($uid, $page);
+            $d = getPageData($uid, $page); // xxx sometimes these are undefined
+            //if(count($d) < 2) {
+            //    DBG("Unknown page '$page' for $username");
+            //}
             $ans[$page]['mtime'] = $d[0];
             $ans[$page]['data']  = $d[1];
         }
@@ -151,12 +154,22 @@ function doAction($action, $FORM) {
         printArray( $out );
         break;
     case "getEventArray":
-        $e        = getEventsForUser($FORM["uid"]);
+        $limit    = 40;
+        $offset   = 0+$FORM["offset"];
+        //$startTime = time();
+        //DBG("GetEventArray offset: " . $offset);
+        $e        = getSomeEventsForUser($FORM["uid"], $limit, $offset);
         $readable = parseReadableArray($e);
-        printArray( $readable );
+        $offset = $offset + $limit;
+        if(count($e) < $limit)
+            $offset = 0;
+        //$jdata = json_encode($readable, true);
+        //DBG("Readable: " . $jdata);
+        //DBG("GetEventArray time: " . (time() - $startTime));
+        printArray( array("data" => $readable, "offset" => $offset) );
         break;
     case "setEventArray":
-        $out = array();
+        $out  = array();
         $data = $FORM["data"];
         $out["startTime"] = $data["startTime"];
         $out["endTime"]   = $data["endTime"];

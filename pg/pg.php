@@ -974,6 +974,11 @@ function getEventsForUser($uid) {
     $ans = getDB($stmt, array($uid, PDO::PARAM_INT));
     return $ans;
 }
+function getSomeEventsForUser($uid, $limit, $offset) {
+    $stmt = "SELECT eid,uid,cid,pid,start,duration,type,data FROM ".E_TABLE." WHERE uid=? AND active!=FALSE ORDER BY start ASC LIMIT $limit OFFSET $offset";
+    $ans = getDB($stmt, array($uid, PDO::PARAM_INT));
+    return $ans;
+}
 function updateEventsForUser($uid) {
     // get event IDS for all WP media
     $username = getUsernameFromID($uid);

@@ -3,7 +3,7 @@
 Plugin Name: Psygraph
 Plugin URI: http://psygraph.com
 Description: This plugin integrates with the Psygraph mobile app (an app that tracks your meditation, breathing, and mindfulness) to visualize your data in WordPress.  The provided shortcodes can do things like generate progress charts, show the history of meditation sessions, and allow playback of recorded audio notes.
-Version: 0.8.6
+Version: 0.9.0
 Author: Alec Rogers
 Author URI: http://arborrhythms.com
 License: http://creativecommons.org/licenses/by-sa/4.0/
@@ -24,6 +24,7 @@ require_once(plugin_dir_path(__FILE__)."/pg_shortcode.php");
 add_shortcode('pg_page',   'pg_pageShortcode');
 add_shortcode('pg_events', 'pg_eventsShortcode');
 add_shortcode('pg_link',   'pg_linkShortcode');
+add_shortcode('pg_test',   'pg_testShortcode');
 
 // add xml-rpc methods for Psygraph server
 require_once(plugin_dir_path(__FILE__)."/pg_xmlrpcMethods.php");
@@ -63,6 +64,11 @@ function pg_enqueue_scripts() {
 
 add_action('wp_enqueue_scripts', 'pg_enqueue_scripts');
 
+
+// add daily and weekly emails
+add_action('pg_weekly', 'pg_run_weekly');
+add_action('pg_daily', 'pg_run_daily');
+
 // =====================================================================
 // Handle plugin installation and removal
 // =====================================================================
@@ -90,11 +96,9 @@ function pg_activate() {
     $wp_filesystem->put_contents(__DIR__."/pgConfig.xml", $params, (0600 & ~ umask()) ); //WP_PLUGIN_DIR."/psygraph/pgConfig.xml"
 
     // add weekly and daily events
-    add_action('pg_weekly', 'pg_run_weekly');
     if (! wp_next_scheduled ( 'pg_weekly' )) {
         wp_schedule_event(strtotime("Sunday 01:00"), 'weekly', 'pg_weekly');
     }
-    add_action('pg_daily', 'pg_run_daily');
     if (! wp_next_scheduled ( 'pg_daily' )) {
         wp_schedule_event(strtotime("today 01:00"), 'daily', 'pg_daily');
     }

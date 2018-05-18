@@ -15,6 +15,19 @@ if(isset($FORM['query']) && isset($FORM['username']) ) {
         printResult($jdata);
         exit(0);
     }
+    elseif($query == "categories") {
+        $uid  = getIDFromUsername( $FORM["username"] );
+        $allCategories = getCategories($uid);
+        $cats = array();
+        for($j=0; $j<count($allCategories); $j++) {
+            $cid = $allCategories[$j][0];
+            $cats[] = getCategoryNameFromID($cid);
+        }
+        $data[$query] = $cats;
+        $jdata = json_encode($data, true);
+        printResult($jdata);
+        exit(0);
+    }
     exit(1);
 }
 

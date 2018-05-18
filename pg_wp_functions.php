@@ -162,7 +162,7 @@ function pg_wp_uploadMedia($username, $eid, $filename, $fileSrc, $title, $text, 
    
     $postID  = pg_getPostID($username, $eid);
     $postURL = get_permalink($postID);
-    pg_sendUploadEmail($username, $postURL, $mediaURL);
+    pg_sendUploadEmail($username, $title, $postURL, $mediaURL);
     return "OK";
 }
 

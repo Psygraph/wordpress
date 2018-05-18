@@ -71,7 +71,7 @@ function pg_run_daily() {
     $ret = "Sending mail to: ";
     foreach ($users as $username) {
         if(pgUser_emailFrequency($username) == "daily") {
-            $ret .= " " . pg_sendStatusEmail($username);
+            $ret .= " " . pg_sendStatusEmail($username, "daily");
         }
     }
     return $ret;
@@ -81,16 +81,13 @@ function pg_run_weekly() {
     $ret = "Sending mail to: ";
     foreach($users as $username) {
         if(pgUser_emailFrequency($username) == "weekly") {
-            $ret .= " " . pg_sendStatusEmail($username);
+            $ret .= " " . pg_sendStatusEmail($username, "weekly");
         }
     }
     return $ret;
 }
-function pg_sendStatusEmail($username) {
-    $email = pg_getEmail($username);
-    if(strpos($email, ".")===false ||
-        strpos($email, "@")===false)
-        return "";
+function pg_sendStatusEmail($username, $frequency) {
+    $email    = pg_getEmail($username);
     $cert     = pg_getCert($username);
     $server   = pg_hostUrl();
     $url  = $server . "/webclient/wp.php";
@@ -98,24 +95,40 @@ function pg_sendStatusEmail($username) {
     $url .= "&cert="     . urlencode($cert);
     $url .= "&server="   . urlencode($server);
 
-    $cmd = "php ".__DIR__."/pg_screenshot.php \"$url\" $username";
-    $filename = "";
-    exec($cmd, $filename);
+    if($frequency=="daily")
+        $url .= "&hist=7";
+    else
+        $url .= "&hist=30";
+
+    // Make status graphs for each category
+    $attachments = array();
+    $categories = pg_query($username, "categories");//["Meditate", "Exercise"];
+    foreach($categories as $cat) {
+        $finalURL = $url . "&category=" . $cat;
+        $cmd = "php " . __DIR__ . "/pg_screenshot.php \"$finalURL\" $username $cat";
+        $filename = shell_exec($cmd);
+        array_push($attachments, $filename);
+    }
 
     $to          = $email;
-    $subject     = "Psygraph status";
+    $subject     = "Psygraph $frequency status";
     $body        = "<p>Dear $username,</p>";
     $body       .= "<p>Attached is the graph of your recent activity.</p>";
     $body       .= "<p>This graph was generated from a read-only version of the app at: $url</p>";
-    $body       .= "<p>Kind regards, <i>-Psygraph</i></p>";
-    //$body       .= '<p>Command: '. $cmd .'</p>';
-    //$body       .= '<p>Result: '. implode("\n", $filename) .'</p>';
+    $body       .= "<p>Kind regards, <br/><i>-Psygraph</i></p>";
+    $body       .= '<hr/>';
+    //$body       .= '<p>Attachments:</p><p>'. implode("</p><p>", $attachments) . '</p>';
     $headers     = array('Content-Type: text/html; charset=UTF-8');
-    $attachments = $filename;
-    wp_mail( $to, $subject, $body, $headers, $attachments);
+
+    if( wp_mail( $to, $subject, $body, $headers, $attachments ) ) {
+        //echo 'The test message was sent. Check your email inbox.';
+    }
+    else {
+        //echo 'The message was not sent!';
+    }
     return $email;
 }
-function pg_sendUploadEmail($username, $postURL, $mediaURL) {
+function pg_sendUploadEmail($username, $title, $postURL, $mediaURL) {
     $email = pg_getEmail($username);
     $cert  = pg_getCert($username);
 
@@ -125,7 +138,7 @@ function pg_sendUploadEmail($username, $postURL, $mediaURL) {
     $to          = $email;
     $subject     = "Psygraph Note Uploaded";
     $body        = "<p>Dear $username,</p>";
-    $body       .= "<p>Your recent Psygraph note has been uploaded.</p>";
+    $body       .= "<p>Your recent Psygraph note \"$title\" has been uploaded.</p>";
     $body       .= "<p>If you have turned on public access, that content is available at:</p>";
     $body       .= "<ul>";
     if($postURL != "") {

@@ -3,6 +3,40 @@
 require_once( "pg_db.php" );
 require_once( "pg_user.php" );
 
+// [pg_test] uesd to test the infrastructure
+
+function pg_testShortcode( $atts ) {
+    $username = pg_getPageUsername();
+    $cert     = pg_getCert($username);
+    $script   = __DIR__."/pg_screenshot.php";
+    // set defaults
+    $atts = shortcode_atts( array(
+                                'script'   => "$script",
+                                'username' => "$username",
+                                'cert'     => "$cert"
+                                ), $atts );
+
+    $script   = $atts['script'];
+    $username = $atts['username'];
+    $cert     = $atts['cert'];
+
+    $cert     = pg_getCert($username);
+    $email    = pg_getEmail($username);
+    $server   = pg_hostUrl();
+
+    $url  = $server . "/webclient/wp.php";
+    $url .= "?username=" . urlencode($username);
+    $url .= "&cert="     . urlencode($cert);
+    $url .= "&server="   . urlencode($server);
+
+    $response = "";
+    $cmd = "php $script \"$url\" $username";
+    $response = $cmd;
+    $filename = "";
+    exec($cmd, $filename);
+    return $response;
+}
+
 // [pg_link] return a link
 function pg_linkShortcode( $atts ) {
     $username = pg_getPageUsername();
@@ -22,7 +56,7 @@ function pg_linkShortcode( $atts ) {
                                 'type'     => "",
                                 'interval' => "none"
                                 ), $atts );
-    
+
     // generate a link to a file
     $url = "<a href=\"";
     $url .= pg_serverUrl() . "/output.php";
